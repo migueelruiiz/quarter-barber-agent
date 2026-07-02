@@ -102,7 +102,7 @@ Agente (loop ReAct + tools)
 
 | Component | Tecnology |
 |---|---|
-| LLM Model | Groq/Llama 3.3 70B dev → Claude Haiku production |
+| LLM Model | openai/gpt-oss-120b dev → Claude Haiku production |
 | Backend | FastAPI + Uvicorn |
 | Calendar | Google Calendar API |
 | WhatsApp | Twilio (WhatsApp Business API) |

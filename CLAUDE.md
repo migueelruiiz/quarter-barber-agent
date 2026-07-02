@@ -63,7 +63,7 @@ quarter-barber-agent/
 
 | Component | Technology |
 |---|---|
-| LLM | Groq / Llama 3.3 70b for dev → Claude Haiku for production |
+| LLM | openai/gpt-oss-120b for dev → Claude Haiku for production |
 | Backend | FastAPI + Uvicorn |
 | Calendar | Google Calendar API |
 | WhatsApp | Twilio (WhatsApp Business API) |
