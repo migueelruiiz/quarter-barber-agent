@@ -155,6 +155,7 @@ Because of talking with real owned customers:
 ### 3.9. Account management
 
 - **Google Cloud**: developer's account (free, "testing" mode, up to 100 authorized users - enough for the pilot). The owner just needs to authorize the acces to the Calendar through OAuth. 
+Development and testing will be performed against a developer-owned Google Calendar to avoid any risk to live barbershop data. The owner's calendar will only be accessed via OAuth once the integration layer is fully validated.
 - **Twilio**: developer's account for developing and sandbox. The Meta business verification for production number will require sensitive information when the moment arrives.
 - **Render/Railway**: developer's account, with no relation to the business. 
 

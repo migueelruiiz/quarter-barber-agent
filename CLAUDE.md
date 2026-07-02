@@ -89,6 +89,14 @@ quarter-barber-agent/
 
 ---
 
+## Development environment
+
+**Calendar under development:** all development and testing is done against a personal Google Calendar (developer-owned), not the barbershop's calendar. The production calendar is only accessed for a final read-only smoke test once the code is validated, followed by write operations with explicit care.
+
+**OAuth authorization from the owner** is required before any access to the production calendar. This is a manual step deferred until the codebase is stable.
+
+---
+
 ## Open questions (pending stakeholder confirmation)
 
 - [ ] Is there one shared Google Calendar account for all 4 barbers, or one per barber?
