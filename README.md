@@ -22,8 +22,7 @@ Built as a follow-up to [`personal-agent`](https://github.com/migueelruiiz/perso
 
 ## Stack
 
-LLM (Groq/Llama for dev, Claude Haiku for production) · FastAPI · Google Calendar API · Twilio (WhatsApp) · ChromaDB + sentence-transformers (RAG)
-
+LLM (Groq/Llama for dev, Claude Haiku for production) · FastAPI · Google Calendar API · Twilio (WhatsApp)
 ---
 
-Developed with Claude Code as a development assistant, under my own architecture and design decisions — see [`docs/SPEC.md`](docs/SPEC.md) for the full requirements and engineering process.
+Developed with Claude Code as a development assistant, under my own architecture and design decisions — see [`docs/SPEC.md`](docs/SPEC.md) for the full requirements and engineering proce

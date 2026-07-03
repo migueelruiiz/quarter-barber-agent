@@ -25,7 +25,7 @@ FastAPI backend (cloud — Render or Railway)
         ↓
 Agent (ReAct loop + tools)
         ↓
-Google Calendar API / ChromaDB RAG / Session memory
+Google Calendar API / Session memory
 ```
 
 **Tools to implement:**
@@ -33,7 +33,6 @@ Google Calendar API / ChromaDB RAG / Session memory
 - `book_appointment` — create event in Google Calendar
 - `cancel_appointment` — cancel existing event
 - `reschedule_appointment` — cancel + create, or move existing event
-- `search_business_info` — RAG over business documents (price list, services)
 
 ---
 
@@ -43,17 +42,16 @@ Google Calendar API / ChromaDB RAG / Session memory
 quarter-barber-agent/
 ├── docs/
 │   └── quarter_barber_spec.md     ← this document
-├── knowledge_base/                ← RAG content (price list, etc.)
 ├── src/
 │   ├── agent/                     ← ReAct loop, agent class
 │   ├── calendar/                  ← Google Calendar API integration
 │   ├── memory/                    ← session memory (per phone number)
-│   ├── rag/                       ← ChromaDB + sentence-transformers
 │   ├── tools/                     ← one file per tool
 │   └── whatsapp/                  ← Twilio integration
 ├── tests/
 ├── .env
 ├── .gitignore
+├── config.py                      ← SERVICES, BARBERS dicts + render functions
 ├── CLAUDE.md
 ├── credentials.json
 ├── README.md
@@ -74,7 +72,6 @@ quarter-barber-agent/
 | Backend | FastAPI + Uvicorn |
 | Calendar | Google Calendar API |
 | WhatsApp | Twilio (WhatsApp Business API) |
-| RAG | ChromaDB + sentence-transformers |
 | Hosting | Render or Railway |
 | Memory | Persistent per session (`session_id` = phone number) |
 
@@ -86,7 +83,7 @@ quarter-barber-agent/
 
 **Google Calendar is the only source of truth.** Never create a parallel database of appointments. All reads and writes go through the Calendar API.
 
-**Barbers are identified by `colorId`** on Google Calendar events. The mapping between colorId and barber name lives in structured config (`barbers_config`), not in the prompt or RAG. If a wrong colorId is used, a real booking goes to the wrong barber — this must be config, not free text.
+**Barbers are identified by `colorId`** on Google Calendar events. The mapping between colorId and barber name lives in structured config (`barbers_config`), not in the prompt. If a wrong colorId is used, a real booking goes to the wrong barber — this must be config, not free text.
 
 **Never fabricate information.** If a tool fails or returns no data, the agent must say so explicitly. It must never guess prices, availability, or barber schedules. This is a real business with real customers.
 

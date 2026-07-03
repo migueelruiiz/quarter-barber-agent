@@ -4,10 +4,6 @@
 
 **Client/Stakeholder**: Quarter Barber, Gentleman's (Calle Abtao Nº 4)
 
-**Version**: v0.1 — Initial draft post-initial approach with stakeholder. 
-
-**State**: currently in design phase, pending implementation. 
-
 **Repo**: `https://github.com/migueelruiiz/quarter-barber-agent`
 
 ---
@@ -65,7 +61,7 @@ Currently the appointment management is done through call or WhatsApp directly t
 | R-5 | Reliability | The system shall explicitly say to the customer that it's not able to resolve the request |
 | R-6 | Reliability | The system shall apply basic abuse protection (rate limiting per phone), given the exposure to external users |
 | R-7 | Reliability | The system shall double-verify slot availability immediately before creating the calendar event, to prevent double booking from near-simultaneous requests |
-| R-8 | Information | The system shall answer pricing and service questions based on official business documentation (via RAG) |
+| R-8 | Information | The system shall answer pricing and service questions from a verified business knowledge base injected into the model context as a cached prefix, never from model memory |
 | R-9 | Logic | The system shall be able to create, cancel, and reschedule appointments directly in Google Calendar |
 | R-10 | Logic | The system shall only offer appointment slots that fall within the requesting barber's configured working schedule, accounting for barber-specific working days and hours |
 | R-11 | Logic | The system shall check real-time availability against the shared Google Calendar before offering or confirming any appointment slot |
@@ -106,7 +102,6 @@ Agente (loop ReAct + tools)
 | Backend | FastAPI + Uvicorn |
 | Calendar | Google Calendar API |
 | WhatsApp | Twilio (WhatsApp Business API) |
-| RAG | ChromaDB + sentence-transformers |
 | Hosting | Render o Railway |
 | Memory | Session-persistent (`session_id` = telephone) |
 
@@ -118,15 +113,14 @@ Agente (loop ReAct + tools)
 | `book_appointment` | Create events in Google Calendar (customer, service, barber(indicated by color)) |
 | `cancel_appointment` | Cancel existing events, free up spots |
 | `reschedule_appointment` | Cancel + create events, or move an existing event |
-| `search_business_info` (RAG) | Prices, services, schedule, directions - about official business documents |
 
 ### 3.4. Memory and sessions
 
 **`session_id` is necessary** - each actual customer needs an independent conversation, identified by a telephone number. Each session maintain its own historic records.
 
-### 3.5. RAG
+### 3.5. Knowledge base
 
-The stack used will be: ChromaDB local + `sentence-transformers`; indexing official business documents: price list and any other additional information added (special schedule during festivities, politics, etc.).
+All structured business data (services, prices, durations, barber eligibility per service, colorId-to-barber mapping, working hours) is maintained in `src/config.py` as the single source of truth. This config is consumed by both the booking logic (durations, eligibility, colorId) and the analytics layer (prices). The agent's system prompt receives a string projection generated from this config at load time as a cached prefix. No embedding model or vector database is required at this scale; if the knowledge base grows substantially post-v1.0, retrieval-augmented generation can be introduced at that point.
 
 ### 3.6. Analitic layer for the owner
 
@@ -167,17 +161,16 @@ Flat structure (no domain-based subfolders), because of YAGNI principle - it'll 
 quarter-barber-agent/
 ├── docs/
 │   └── quarter_barber_spec.md     ← this document
-├── knowledge_base/                ← RAG content (price list, etc.)
 ├── src/
 │   ├── agent/                     ← ReAct loop, agent class
 │   ├── calendar/                  ← Google Calendar API integration
 │   ├── memory/                    ← session memory (per phone number)
-│   ├── rag/                       ← ChromaDB + sentence-transformers
 │   ├── tools/                     ← one file per tool
 │   └── whatsapp/                  ← Twilio integration
 ├── tests/
 ├── .env
 ├── .gitignore
+├── config.py                      ← SERVICES, BARBERS dicts + render functions
 ├── CLAUDE.md
 ├── credentials.json
 ├── README.md
