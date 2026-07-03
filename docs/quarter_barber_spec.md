@@ -166,20 +166,21 @@ Flat structure (no domain-based subfolders), because of YAGNI principle - it'll 
 ```
 quarter-barber-agent/
 ├── docs/
-│   ├── REQUIREMENTS.md
-│   ├── ARCHITECTURE.md      ← This document
-│   └── PROGRESS.md
+│   └── quarter_barber_spec.md     ← this document
+├── knowledge_base/                ← RAG content (price list, etc.)
 ├── src/
-│   ├── agent/
-│   ├── tools/
-│   ├── calendar/
-│   ├── whatsapp/
-│   ├── rag/
-│   └── memory/
-├── documents/                ← RAG content (price list, etc.)
+│   ├── agent/                     ← ReAct loop, agent class
+│   ├── calendar/                  ← Google Calendar API integration
+│   ├── memory/                    ← session memory (per phone number)
+│   ├── rag/                       ← ChromaDB + sentence-transformers
+│   ├── tools/                     ← one file per tool
+│   └── whatsapp/                  ← Twilio integration
 ├── tests/
-├── README.md
+├── .env
+├── .gitignore
 ├── CLAUDE.md
-├── .env / .gitignore / requirements.txt
+├── credentials.json
+├── README.md
+├── requirements.txt
 └── api.py
 ```

@@ -42,19 +42,23 @@ Google Calendar API / ChromaDB RAG / Session memory
 ```
 quarter-barber-agent/
 ├── docs/
-│   └── SPEC.md               ← full requirements and architecture
+│   └── quarter_barber_spec.md     ← this document
+├── knowledge_base/                ← RAG content (price list, etc.)
 ├── src/
-│   ├── agent/                ← ReAct loop, agent class
-│   ├── tools/                ← one file per tool
-│   ├── calendar/             ← Google Calendar API integration
-│   ├── whatsapp/             ← Twilio integration
-│   ├── rag/                  ← ChromaDB + sentence-transformers
-│   └── memory/               ← session memory (per phone number)
-├── knowledge_base/           ← RAG source documents (price list, etc.)
+│   ├── agent/                     ← ReAct loop, agent class
+│   ├── calendar/                  ← Google Calendar API integration
+│   ├── memory/                    ← session memory (per phone number)
+│   ├── rag/                       ← ChromaDB + sentence-transformers
+│   ├── tools/                     ← one file per tool
+│   └── whatsapp/                  ← Twilio integration
 ├── tests/
-├── api.py                    ← FastAPI entrypoint
-├── .env                      ← never commit this
-└── requirements.txt
+├── .env
+├── .gitignore
+├── CLAUDE.md
+├── credentials.json
+├── README.md
+├── requirements.txt
+└── api.py
 ```
 
 ---
