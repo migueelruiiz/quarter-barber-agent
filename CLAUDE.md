@@ -58,8 +58,11 @@ quarter-barber-agent/
 ├── credentials.json
 ├── README.md
 ├── requirements.txt
+├── token.json
 └── api.py
 ```
+
+**Import convention:** always use full path imports from `src.calendar` to avoid conflict with Python's built-in `calendar` stdlib module. Example: `from src.calendar.queries import list_events`.
 
 ---
 
@@ -90,6 +93,10 @@ quarter-barber-agent/
 **Slot re-verification before write:** always check availability immediately before creating a calendar event to prevent double-booking race conditions.
 
 **RAG is for business information only** (prices, services, address, policies). Appointment logic (availability, booking) always goes through the Calendar API — never through RAG or model knowledge.
+
+**Google Calendar colorId:** barber colors come from the `event` color map returned by `colors.get()`, not the `calendar` map. colorId values are strings (e.g. "7", "10", "11").
+
+**Null colorId handling:** events with colorId null inherit the calendar's default color visually, but the API returns null — not the default colorId. The system must treat null as belonging to the default barber (pending stakeholder confirmation of which barber is the calendar default). check_slot_available must match null explicitly when querying availability for the default barber.
 
 ---
 
