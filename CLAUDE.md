@@ -89,7 +89,7 @@ quarter-barber-agent/
 
 **Slot re-verification before write:** always check availability immediately before creating a calendar event to prevent double-booking race conditions.
 
-**RAG is for business information only** (prices, services, address, policies). Appointment logic (availability, booking) always goes through the Calendar API — never through RAG or model knowledge.
+**Business information delivery:** prices, services, address, and policies are injected into the system prompt as a cached context prefix generated from `src/config.py` at load time. Appointment logic (availability, booking) always goes through the Calendar API — never from model memory.
 
 **Google Calendar colorId:** barber colors come from the `event` color map returned by `colors.get()`, not the `calendar` map. colorId values are strings (e.g. "7", "10", "11").
 
