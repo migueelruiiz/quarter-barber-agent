@@ -95,6 +95,10 @@ quarter-barber-agent/
 
 **Null colorId handling:** events with colorId null inherit the calendar's default color visually, but the API returns null — not the default colorId. The default barber is Juan (peacock blue is the calendar's default color, meaning his events are expected to carry colorId == null rather than an explicit value). This still requires empirical verification via colors.get + manual event inspection before being hardcoded — a named color from the owner is not equivalent to a confirmed API value. check_slot_available must match null explicitly when querying availability for the default barber.
 
+**Known limitation — expanded color palette invisible to API v3 (confirmed July 2026):** Google Calendar's June 2026 rollout expanding event colors from 11 to 24 defaults plus up to 200 custom RGB colors is not exposed through the public Calendar API v3, at least for the account types tested (personal Gmail). Confirmed empirically: an event colored with a new-palette color (outside the classic 11) has no `colorId` key and no other new key in its raw JSON response, with or without the undocumented `eventLabelVersion=1` parameter — it is indistinguishable via API from a true default/no-color event.
+
+Operational constraint: barbers must only use one of the 11 classic colors when assigning their event color — the four current assignments (Rafa=Basil/10, Yuri=Tangerine/6, Dylan=Blueberry/9, Juan=default/null) are all within this safe set. If any barber's color is ever reassigned to a color from the new palette, their events will silently be read as belonging to the default barber (Juan), risking double-booking. This must be communicated to the owner as a process constraint, not just a technical footnote — no code-side detection is possible given current API behavior.
+
 **Bleaching duration:** book the maximum documented duration for any service combination including a bleaching treatment, not the typical duration — actual duration is hair-dependent and the calendar event is the only record of barber availability (R-16). The barber can shorten the event manually afterward; this is reflected automatically in the next availability check, no agent logic needed.
 
 **Bleaching eligibility:** only Dylan and Juan are configured as eligible. No separate priority rule is needed to prefer Dylan — filtering the general seniority fallback order (Dylan, Yuri, Rafa, Juan) by service eligibility already yields Dylan first.
@@ -109,11 +113,7 @@ quarter-barber-agent/
 
 **Calendar under development:** all development and testing is done against a personal Google Calendar (developer-owned), not the barbershop's calendar. The production calendar is only accessed for a final read-only smoke test once the code is validated, followed by write operations with explicit care.
 
-**Dev OAuth credentials already configured:** `credentials.json` and `token.json` 
-exist in the project root and are valid for the `quarter-barber-dev` calendar. 
-Claude Code sessions must reuse them and must never regenerate credentials or 
-re-run the OAuth consent flow unless explicitly told the token is invalid or 
-expired.
+**Dev OAuth credentials already configured:** `credentials.json` and `token.json` exist in the project root and are valid for the `quarter-barber-dev` calendar. Claude Code sessions must reuse them and must never regenerate credentials or re-run the OAuth consent flow unless explicitly told the token is invalid or expired.
 
 **OAuth authorization from the owner** is required before any access to the production calendar. This is a manual step deferred until the codebase is stable.
 
