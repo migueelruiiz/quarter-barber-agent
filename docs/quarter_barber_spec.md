@@ -37,16 +37,17 @@ Currently the appointment management is done through call or WhatsApp directly t
 - Multi-local support
 - Advance analytics dashboard
 
-### 1.5. Outstanding Questions for Stakeholder
+### 1.5. Stakeholder Configuration — Status
 
-- Cual es el tiempo de reserva para corte, barba, corte + barba, y cualquier otra consulta (color, mechas, color fantasía)
-- Solo existe una cuenta que accede al google calendar y un solo calendario para gestionar las citas verdad?
-- Cual es la respuesta habitual via WhatsApp cuando alguien te pide una excepción sobre una cita fuera del horario habitual?
-- Cual es la regla que actualmente se usa para ofrecer a un peluquero frente a otro? 
-    De aqui debe salir un nuevo requisito: 
-    The system shall assign a barber according to the following precedence: explicit client preference (named barber) → client's most recent barber if conversation history indicates a returning client → a deterministic fallback rule (e.g. newest barber) when no preference or history is available *(fallback rule pending stakeholder confirmation)*
-- Dime que color se asocia a cada peluquero en los eventos de google calendar
-- Que dias exactos trabaja cada peluquero?
+All v1 configuration inputs originally required from the stakeholder have been 
+collected (service durations, barber working days, business hours, barber 
+service eligibility, and the assignment fallback rule — see Section 2 and 
+`config.py`). One item remains open:
+
+- **colorId per barber**: named colors were provided by the owner, but per 
+  this project's data-integrity principle, the actual colorId values must be 
+  confirmed via the Calendar `colors.get` API and manual inspection of 
+  existing events before being hardcoded into `config.py`.
 
 ---
 
@@ -61,13 +62,17 @@ Currently the appointment management is done through call or WhatsApp directly t
 | R-5 | Reliability | The system shall explicitly say to the customer that it's not able to resolve the request |
 | R-6 | Reliability | The system shall apply basic abuse protection (rate limiting per phone), given the exposure to external users |
 | R-7 | Reliability | The system shall double-verify slot availability immediately before creating the calendar event, to prevent double booking from near-simultaneous requests |
-| R-8 | Information | The system shall answer pricing and service questions from a verified business knowledge base injected into the model context as a cached prefix, never from model memory |
+| R-8 | Information | The system shall answer pricing and service questions from a verified business knowledge base injected into the model context as a cached prefix, never from model memory. Source of truth for pricing: the business's official Instagram photo (unstructured; no other documentation exists), manually transcribed into `config.py` — there is no automated sync between the Instagram source and the config. |
 | R-9 | Logic | The system shall be able to create, cancel, and reschedule appointments directly in Google Calendar |
 | R-10 | Logic | The system shall only offer appointment slots that fall within the requesting barber's configured working schedule, accounting for barber-specific working days and hours |
 | R-11 | Logic | The system shall check real-time availability against the shared Google Calendar before offering or confirming any appointment slot |
 | R-12 | Logic | The system shall determine appointment duration based on the requested service type, rather than assuming a fixed slot length |
 | R-13 | Logic | The system shall identify each barber via Google Calendar colorId value, and shall only assign appointments to barbers whose configured service list includes the requested service |
 | R-14 | Compliance | The system shall comply with Meta/WhatsApp policies for AI agents in force at deplotment time |
+| R-15 | Logic | The system shall assign a barber according to the following precedence: explicit client preference (named barber) → client's most recent barber if conversation history indicates a returning client → deterministic fallback by seniority order (Dylan, Yuri, Rafa, Juan), filtered to barbers eligible for the requested service |
+| R-16 | Logic | The system shall reserve the maximum documented duration, rather than the typical duration, when booking services that include a bleaching treatment |
+| R-17 | Reliability | The system shall decline to process appointment requests falling outside configured operating hours or standard scheduling rules, offering a phone call with the business as the resolution path |
+| R-18 | Infrastructure | The system shall support barber schedule overrides (day-off changes) at the configuration level, requiring manual verification against existing appointments before taking effect |
 
 ---
 
@@ -87,8 +92,8 @@ Agente (loop ReAct + tools)
 ┌─────────────────────────────────────┐
 │ Google Calendar API (unique source  │
 │   of truth for appointments)        │
-│ ChromaDB + sentence-transformers    │
-│   (RAG for business information)    │
+│ config.py — cached system prompt    │
+│   prefix (business info, no RAG)    │
 │ Memory per session (1 per           │
 │    telephone number)                │
 └─────────────────────────────────────┘

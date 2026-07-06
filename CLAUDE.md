@@ -29,7 +29,7 @@ Google Calendar API / Session memory
 ```
 
 **Tools to implement:**
-- `check_availability` — query Google Calendar for free 30-min (or other time if the service requires it) slots within each barber's configured working hours (see barbers_config — pending stakeholder confirmation)
+- `check_availability` — query Google Calendar for free 30-min (or other time if the service requires it) slots within each barber's configured working hours (see barbers_config in config.py)
 - `book_appointment` — create event in Google Calendar
 - `cancel_appointment` — cancel existing event
 - `reschedule_appointment` — cancel + create, or move existing event
@@ -93,7 +93,15 @@ quarter-barber-agent/
 
 **Google Calendar colorId:** barber colors come from the `event` color map returned by `colors.get()`, not the `calendar` map. colorId values are strings (e.g. "7", "10", "11").
 
-**Null colorId handling:** events with colorId null inherit the calendar's default color visually, but the API returns null — not the default colorId. The system must treat null as belonging to the default barber (pending stakeholder confirmation of which barber is the calendar default). check_slot_available must match null explicitly when querying availability for the default barber.
+**Null colorId handling:** events with colorId null inherit the calendar's default color visually, but the API returns null — not the default colorId. The default barber is Juan (peacock blue is the calendar's default color, meaning his events are expected to carry colorId == null rather than an explicit value). This still requires empirical verification via colors.get + manual event inspection before being hardcoded — a named color from the owner is not equivalent to a confirmed API value. check_slot_available must match null explicitly when querying availability for the default barber.
+
+**Bleaching duration:** book the maximum documented duration for any service combination including a bleaching treatment, not the typical duration — actual duration is hair-dependent and the calendar event is the only record of barber availability (R-16). The barber can shorten the event manually afterward; this is reflected automatically in the next availability check, no agent logic needed.
+
+**Bleaching eligibility:** only Dylan and Juan are configured as eligible. No separate priority rule is needed to prefer Dylan — filtering the general seniority fallback order (Dylan, Yuri, Rafa, Juan) by service eligibility already yields Dylan first.
+
+**Out-of-hours exceptions:** requests outside configured operating hours or standard rules are not resolved automatically; the agent offers a phone call with the business instead (R-17).
+
+**Barber day-off swaps:** requires checking no existing appointments conflict with the barber's desired new day off before applying the change. Manual config change by the developer for v1; a future owner-facing dashboard may expose this directly (R-18).
 
 ---
 
@@ -101,17 +109,31 @@ quarter-barber-agent/
 
 **Calendar under development:** all development and testing is done against a personal Google Calendar (developer-owned), not the barbershop's calendar. The production calendar is only accessed for a final read-only smoke test once the code is validated, followed by write operations with explicit care.
 
+**Dev OAuth credentials already configured:** `credentials.json` and `token.json` 
+exist in the project root and are valid for the `quarter-barber-dev` calendar. 
+Claude Code sessions must reuse them and must never regenerate credentials or 
+re-run the OAuth consent flow unless explicitly told the token is invalid or 
+expired.
+
 **OAuth authorization from the owner** is required before any access to the production calendar. This is a manual step deferred until the codebase is stable.
 
 ---
 
-## Open questions (pending stakeholder confirmation)
+## Configuration status
 
-- [ ] Is there one shared Google Calendar account for all 4 barbers, or one per barber?
-- [ ] Exact `colorId` mapping per barber (must be verified empirically via Calendar API, not assumed)
-- [ ] Working hours per barber (individual schedules may differ)
-- [ ] Service durations per service type (corte, barba, corte + barba, color, mechas, etc.)
-- [ ] Fallback rule for barber assignment when client has no preference and no history
+Resolved by the stakeholder (see `quarter_barber_spec.md` Section 2):
+- [x] One shared Google Calendar account and calendar for all 4 barbers
+- [x] Working hours and each barber's individual day off
+- [x] Service durations per service type
+- [x] Barber assignment fallback rule (seniority order)
+- [x] Bleaching service eligibility and duration handling
+
+Still open:
+- [ ] Exact `colorId` mapping per barber — must be verified via `colors.get` + 
+  manual event inspection, not assumed from named colors
+
+Planned (engineering task, not stakeholder-dependent):
+- [ ] Barber day-off swap mechanism (config-level override + conflict check)
 
 ---
 
