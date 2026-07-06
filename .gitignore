@@ -1,8 +1,6 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
 *.egg
 *.egg-info/
 dist/
@@ -34,12 +32,6 @@ token.json
 .pytest_cache/
 .coverage
 htmlcov/
-
-# ChromaDB persistence
-chroma/
-chromadb/
-chroma_db/
-.chroma/
 
 # Logs
 *.log

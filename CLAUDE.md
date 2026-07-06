@@ -91,6 +91,8 @@ quarter-barber-agent/
 
 **Business information delivery:** prices, services, address, and policies are injected into the system prompt as a cached context prefix generated from `src/config.py` at load time. Appointment logic (availability, booking) always goes through the Calendar API — never from model memory.
 
+**Price presentation — no profile inference:** when a customer asks about a price, the agent presents the full set of listed variants for that category (e.g. all haircut price variants, mirroring the business's own price list layout) rather than asking the customer's age or profile to select one. This matches the business's existing in-person, honor-based pricing and avoids the agent making an unverifiable assumption about the customer. Combo prices (e.g. corte + barba) are never a stored value — they are the sum of the customer's selected component prices, computed at response time; see config.py PRICE_MENU for the confirmed no-discount policy.
+
 **Google Calendar colorId:** barber colors come from the `event` color map returned by `colors.get()`, not the `calendar` map. colorId values are strings (e.g. "7", "10", "11").
 
 **Null colorId handling:** events with colorId null inherit the calendar's default color visually, but the API returns null — not the default colorId. The default barber is Juan (peacock blue is the calendar's default color, meaning his events are expected to carry colorId == null rather than an explicit value). This still requires empirical verification via colors.get + manual event inspection before being hardcoded — a named color from the owner is not equivalent to a confirmed API value. check_slot_available must match null explicitly when querying availability for the default barber.
