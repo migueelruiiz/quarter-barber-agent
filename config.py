@@ -33,6 +33,7 @@ Naming convention: dictionary keys use plain ASCII (no accented characters).
 """
 
 from zoneinfo import ZoneInfo
+from datetime import time
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +120,7 @@ BARBERS = {
     "dylan": {
         "color_id": "9",  # Blueberry
         "day_off": 1,  # Tuesday
+        "lunch_break": (time(15, 0), time(16, 0)),
         "eligible_services": [
             "corte", "barba", "corte_barba",
             "decoloracion", "decoloracion_corte", "decoloracion_corte_barba",
@@ -127,17 +129,20 @@ BARBERS = {
     "yuri": {
         "color_id": "6",  # Tangerine
         "day_off": 3,  # Thursday
+        "lunch_break": (time(14, 0), time(15, 0)),
         "eligible_services": ["corte", "barba", "corte_barba"],
     },
     "rafa": {
         "color_id": "10",  # Basil
         "day_off": 2,  # Wednesday
+        "lunch_break": (time(15, 0), time(16, 0)),
         "eligible_services": ["corte", "barba", "corte_barba"],
     },
     "juan": {
         "color_id": None,  # inherits calendar default (visually Peacock)
         "day_off": 5,  # Saturday — combined with Sunday closure below,
                        # this means Juan effectively only works Mon-Fri
+        "lunch_break": (time(14, 0), time(15, 0)),
         "eligible_services": [
             "corte", "barba", "corte_barba",
             "decoloracion", "decoloracion_corte", "decoloracion_corte_barba",

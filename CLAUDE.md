@@ -111,6 +111,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 
 **Same-day minimum lead time:** slots on the current day must start at least 30 minutes from the current time, rounded up to the next :00/:30-aligned slot. Applies only to the current day — future days are unaffected.
 
+**Lunch breaks:** each barber's `lunch_break` (a fixed time interval in `config.py`, or `None`) is treated as a synthetic busy interval in `check_availability` — merged with real calendar events before computing free gaps, never fetched from the API. It's clipped against that day's `WORKING_HOURS` before being applied, so Saturday is naturally unaffected without any day-of-week special-casing (all lunch breaks start at or after 14:00, Saturday's close time).
+
 ---
 
 ## Development environment
@@ -134,6 +136,7 @@ Resolved by the stakeholder (see `quarter_barber_spec.md` Section 2):
 - [x] Barber assignment fallback rule (seniority order)
 - [x] Bleaching service eligibility and duration handling
 - [x] `CALENDAR_ID` and `TIMEZONE` centralized as constants in `config.py`
+- [x] Per-barber lunch break hours (Yuri/Juan 14:00-15:00, Rafa/Dylan 15:00-16:00)
 
 Still open:
 - [ ] Exact `colorId` mapping per barber — must be verified via `colors.get` + 

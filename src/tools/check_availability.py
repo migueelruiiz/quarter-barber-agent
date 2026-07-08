@@ -103,7 +103,9 @@ def _slots_for_single_barber(
         return []
 
     color_id = barber_data["color_id"]
-    gaps = _free_gaps(day_open, day_close, _busy_intervals(day_open, day_close, color_id))
+    gaps = _free_gaps(
+        day_open, day_close, _busy_intervals(day, day_open, day_close, color_id, barber)
+    )
     candidates = _candidates_from_gaps(gaps, duration, day_close)
 
     return [
@@ -128,7 +130,9 @@ def _slots_best_barber_per_gap(
     free_slots_by_barber = {}
     for b in eligible:
         color_id = BARBERS[b]["color_id"]
-        gaps = _free_gaps(day_open, day_close, _busy_intervals(day_open, day_close, color_id))
+        gaps = _free_gaps(
+            day_open, day_close, _busy_intervals(day, day_open, day_close, color_id, b)
+        )
         free_slots_by_barber[b] = set(_candidates_from_gaps(gaps, duration, day_close))
 
     results = []
@@ -172,7 +176,11 @@ def _apply_lead_time(day: date_cls, day_open: datetime, slots: list[dict]) -> li
 
 
 def _busy_intervals(
-    day_open: datetime, day_close: datetime, color_id: str | None
+    day: date_cls,
+    day_open: datetime,
+    day_close: datetime,
+    color_id: str | None,
+    barber: str,
 ) -> list[tuple[datetime, datetime]]:
     events = list_events(CALENDAR_ID, day_open, day_close)
     intervals = [
@@ -180,6 +188,14 @@ def _busy_intervals(
         for e in events
         if e["colorId"] == color_id
     ]
+
+    lunch_break = BARBERS[barber]["lunch_break"]
+    if lunch_break is not None:
+        lunch_start = max(datetime.combine(day, lunch_break[0], tzinfo=TIMEZONE), day_open)
+        lunch_end = min(datetime.combine(day, lunch_break[1], tzinfo=TIMEZONE), day_close)
+        if lunch_start < lunch_end:
+            intervals.append((lunch_start, lunch_end))
+
     intervals.sort(key=lambda interval: interval[0])
     return intervals
 

@@ -76,7 +76,15 @@ def test_slots_are_generated_every_30_minutes(monkeypatch):
 
     starts = [s["start"] for s in slots]
     assert starts[0] == datetime.combine(MONDAY, time(10, 0), tzinfo=ca.TIMEZONE)
+    # dylan's lunch_break (15:00-16:00, config.py) is the one expected
+    # interruption in an otherwise uniform 30-minute cadence.
+    lunch_gap = (
+        datetime.combine(MONDAY, time(14, 30), tzinfo=ca.TIMEZONE),
+        datetime.combine(MONDAY, time(16, 0), tzinfo=ca.TIMEZONE),
+    )
     for earlier, later in zip(starts, starts[1:]):
+        if (earlier, later) == lunch_gap:
+            continue
         assert later - earlier == timedelta(minutes=30)
 
 
@@ -285,3 +293,60 @@ def test_foreign_offset_event_boundary_normalized_to_madrid(monkeypatch):
     assert next_slot["start"].tzinfo == ca.TIMEZONE
     assert next_slot["start"].utcoffset() == timedelta(hours=2)
     assert next_slot["start"].hour == 13  # not 07/09, which the foreign offset would show
+
+
+# ---------------------------------------------------------------------------
+# lunch_break treated as a synthetic busy interval (local config, not API)
+# ---------------------------------------------------------------------------
+
+SATURDAY = MONDAY + timedelta(days=5)  # 2026-08-08
+assert SATURDAY.weekday() == 5
+
+
+def test_lunch_break_blocks_slots_on_weekday(monkeypatch):
+    _patch_events(monkeypatch, [])
+    # dylan's lunch_break is 15:00-16:00 (config.py).
+
+    slots = ca.check_availability(
+        service="corte", date=MONDAY, barber="dylan", max_results=100
+    )
+    starts = {s["start"] for s in slots}
+
+    assert datetime.combine(MONDAY, time(14, 30), tzinfo=ca.TIMEZONE) in starts
+    assert datetime.combine(MONDAY, time(15, 0), tzinfo=ca.TIMEZONE) not in starts
+    assert datetime.combine(MONDAY, time(15, 30), tzinfo=ca.TIMEZONE) not in starts
+    # starts exactly when lunch ends -> allowed, same no-buffer rule as events
+    assert datetime.combine(MONDAY, time(16, 0), tzinfo=ca.TIMEZONE) in starts
+
+
+def test_lunch_break_does_not_affect_saturday(monkeypatch):
+    _patch_events(monkeypatch, [])
+    # Saturday hours are 09:00-14:00 (config.WORKING_HOURS); dylan's
+    # lunch_break (15:00-16:00) falls entirely outside that window, so it
+    # must have zero effect here -- confirmed by intersecting lunch_break
+    # against day_open/day_close rather than special-casing the weekday.
+
+    slots = ca.check_availability(
+        service="corte", date=SATURDAY, barber="dylan", max_results=100
+    )
+    starts = [s["start"] for s in slots]
+
+    assert starts[0] == datetime.combine(SATURDAY, time(9, 0), tzinfo=ca.TIMEZONE)
+    assert starts[-1] == datetime.combine(SATURDAY, time(13, 30), tzinfo=ca.TIMEZONE)
+    assert len(starts) == 10  # full 09:00-14:00 range, nothing withheld
+
+
+def test_barber_none_falls_back_past_barber_on_lunch_break(monkeypatch):
+    _patch_events(monkeypatch, [])
+    # At 15:00: dylan (1st in SENIORITY_ORDER) is on lunch_break (15:00-16:00)
+    # -> skipped. yuri (2nd) had lunch_break 14:00-15:00, already over by
+    # 15:00 -> free, and should be assigned instead.
+
+    slots = ca.check_availability(service="corte", date=MONDAY, barber=None, max_results=100)
+    slot_1500 = next(
+        s
+        for s in slots
+        if s["start"] == datetime.combine(MONDAY, time(15, 0), tzinfo=ca.TIMEZONE)
+    )
+
+    assert slot_1500["barber"] == "yuri"
