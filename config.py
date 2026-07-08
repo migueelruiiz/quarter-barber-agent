@@ -32,6 +32,8 @@ data.
 Naming convention: dictionary keys use plain ASCII (no accented characters).
 """
 
+from zoneinfo import ZoneInfo
+
 
 # ---------------------------------------------------------------------------
 # Services — duration only, used for Calendar booking (R-10, R-12, R-16)
@@ -166,6 +168,21 @@ WORKING_HOURS = {
     5: ("09:00", "14:00"),  # Saturday
     6: None,                # Sunday — closed
 }
+
+
+# ---------------------------------------------------------------------------
+# Calendar API configuration
+# ---------------------------------------------------------------------------
+# CALENDAR_ID: no calendar beyond the OAuth-authenticated account's own
+# calendar exists for this project. "primary" resolves to that account's
+# calendar — currently the quarter-barber-dev calendar during development
+# (see CLAUDE.md, "Development environment"). This must be confirmed with
+# Miguel before it is relied on against the production barbershop calendar.
+CALENDAR_ID = "primary"
+
+# TIMEZONE: the business is located in Madrid (see CLAUDE.md header
+# address). Used for every tz-aware datetime sent to the Calendar API.
+TIMEZONE = ZoneInfo("Europe/Madrid")
 
 
 # ---------------------------------------------------------------------------

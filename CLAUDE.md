@@ -109,6 +109,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 
 **Barber day-off swaps:** requires checking no existing appointments conflict with the barber's desired new day off before applying the change. Manual config change by the developer for v1; a future owner-facing dashboard may expose this directly (R-18).
 
+**Same-day minimum lead time:** slots on the current day must start at least 30 minutes from the current time, rounded up to the next :00/:30-aligned slot. Applies only to the current day — future days are unaffected.
+
 ---
 
 ## Development environment
@@ -118,6 +120,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 **Dev OAuth credentials already configured:** `credentials.json` and `token.json` exist in the project root and are valid for the `quarter-barber-dev` calendar. Claude Code sessions must reuse them and must never regenerate credentials or re-run the OAuth consent flow unless explicitly told the token is invalid or expired.
 
 **OAuth authorization from the owner** is required before any access to the production calendar. This is a manual step deferred until the codebase is stable.
+
+**Timezone trap confirmed empirically (July 2026):** the Google Calendar API always returns event `dateTime` in the calendar's own default timezone — it silently ignores the `timeZone` field sent on event insert. The dev calendar (`quarter-barber-dev`, tied to a US-based Google account) defaults to `America/New_York`, not `Europe/Madrid`. `check_availability` normalizes every parsed event boundary with `.astimezone(TIMEZONE)` immediately after parsing to guard against this — any future code that reads event `start`/`end` directly from the API (e.g. `book_appointment`) must do the same, or risk returning wrong wall-clock times to customers. This is a dev-environment artifact; the production calendar (Madrid-based) should not exhibit it, but the normalization must stay in place regardless, since relying on a specific account's default timezone is not safe engineering.
 
 ---
 
@@ -129,6 +133,7 @@ Resolved by the stakeholder (see `quarter_barber_spec.md` Section 2):
 - [x] Service durations per service type
 - [x] Barber assignment fallback rule (seniority order)
 - [x] Bleaching service eligibility and duration handling
+- [x] `CALENDAR_ID` and `TIMEZONE` centralized as constants in `config.py`
 
 Still open:
 - [ ] Exact `colorId` mapping per barber — must be verified via `colors.get` + 
