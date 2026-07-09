@@ -115,6 +115,7 @@ Agente (loop ReAct + tools)
 | Tool | Function |
 |---|---|
 | `check_availability` | Check availability from a unique Google Calendar |
+| `find_appointments` | Locate a client's existing future appointment(s) by phone and/or name, for cancel/reschedule flows |
 | `book_appointment` | Create events in Google Calendar (customer, service, barber(indicated by color)) |
 | `cancel_appointment` | Cancel existing events, free up spots |
 | `reschedule_appointment` | Cancel + create events, or move an existing event |

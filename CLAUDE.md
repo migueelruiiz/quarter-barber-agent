@@ -28,10 +28,13 @@ Agent (ReAct loop + tools)
 Google Calendar API / Session memory
 ```
 
+**Tools implemented:**
+- `check_availability` — query Google Calendar for free 30-min (or other time if the service requires it) slots within each barber's configured working hours (see barbers_config in config.py). Integration-tested against `quarter-barber-dev`.
+- `book_appointment` — create event in Google Calendar. Integration-tested against `quarter-barber-dev`.
+- `find_appointments` — locate a client's existing future appointment(s) by phone (digit-substring match) and/or name (NFKD-normalized token match), supporting both agent-created and free-text barber-annotated events. Read-only, no side effects. See `docs/find_appointments_spec.md`. Integration-tested against `quarter-barber-dev`.
+
 **Tools to implement:**
-- `check_availability` — query Google Calendar for free 30-min (or other time if the service requires it) slots within each barber's configured working hours (see barbers_config in config.py)
-- `book_appointment` — create event in Google Calendar
-- `cancel_appointment` — cancel existing event
+- `cancel_appointment` — cancel existing event, given an `event_id` already resolved via `find_appointments`. See `docs/cancel_appointment_spec.md`.
 - `reschedule_appointment` — cancel + create, or move existing event
 
 ---
