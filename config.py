@@ -178,12 +178,15 @@ WORKING_HOURS = {
 # ---------------------------------------------------------------------------
 # Calendar API configuration
 # ---------------------------------------------------------------------------
-# CALENDAR_ID: no calendar beyond the OAuth-authenticated account's own
-# calendar exists for this project. "primary" resolves to that account's
-# calendar — currently the quarter-barber-dev calendar during development
-# (see CLAUDE.md, "Development environment"). This must be confirmed with
-# Miguel before it is relied on against the production barbershop calendar.
-CALENDAR_ID = "primary"
+# CALENDAR_ID: the OAuth-authenticated account owns multiple calendars.
+# "primary" resolves to the account's own personal calendar, NOT
+# quarter-barber-dev (confirmed empirically — a stray test event was
+# written to the personal calendar before this was caught). The dev
+# calendar is a separate secondary calendar; its real ID was found via
+# calendarList().list() (see CLAUDE.md, "Development environment"). This
+# must be swapped for the production barbershop calendar's ID before this
+# is ever relied on in production.
+CALENDAR_ID = "74567ff92913d3a66a69ca8de87852bb95c5147ce44e163c721a9bf00b80c43b@group.calendar.google.com"
 
 # TIMEZONE: the business is located in Madrid (see CLAUDE.md header
 # address). Used for every tz-aware datetime sent to the Calendar API.

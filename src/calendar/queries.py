@@ -45,3 +45,29 @@ def check_slot_available(
     """Return True if no event assigned to color_id overlaps [start, end)."""
     events = list_events(calendar_id, start, end)
     return not any(e["colorId"] == color_id for e in events)
+
+
+def create_event(
+    calendar_id: str,
+    color_id: str | None,
+    summary: str,
+    start: datetime,
+    end: datetime,
+) -> dict:
+    """Insert an event into the calendar. Returns the created event resource
+    (includes at least the event id).
+
+    start and end must be timezone-aware datetimes. Do not rely on the
+    timeZone field sent here for anything read back afterward — the API
+    returns dateTime in the account's own default timezone regardless (see
+    check_availability._parse_event_dt).
+    """
+    service = get_calendar_service()
+    body = {
+        "summary": summary,
+        "start": {"dateTime": start.isoformat()},
+        "end": {"dateTime": end.isoformat()},
+    }
+    if color_id is not None:
+        body["colorId"] = color_id
+    return service.events().insert(calendarId=calendar_id, body=body).execute()
