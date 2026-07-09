@@ -55,3 +55,12 @@ no equivalent race condition to guard against on deletion.
 - No lookup logic — `event_id` must already be known by the caller.
 - No re-verification before delete.
 - Natural-language messaging to the client — structured return only.
+
+## Test cases to cover
+
+- Successful deletion → `{"success": True}`, `delete_event` called once
+  with the correct `event_id`.
+- `HttpError` with status 404 → `{"success": False, "reason": "not_found"}`,
+  no exception propagates.
+- `HttpError` with status 410 → same as above (both map identically).
+- Any other `HttpError` (e.g. 500) → propagates unhandled, not swallowed.

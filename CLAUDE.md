@@ -32,9 +32,9 @@ Google Calendar API / Session memory
 - `check_availability` — query Google Calendar for free 30-min (or other time if the service requires it) slots within each barber's configured working hours (see barbers_config in config.py). Integration-tested against `quarter-barber-dev`.
 - `book_appointment` — create event in Google Calendar. Integration-tested against `quarter-barber-dev`.
 - `find_appointments` — locate a client's existing future appointment(s) by phone (digit-substring match) and/or name (NFKD-normalized token match), supporting both agent-created and free-text barber-annotated events. Read-only, no side effects. See `docs/find_appointments_spec.md`. Integration-tested against `quarter-barber-dev`.
+- `cancel_appointment` — cancel existing event, given an `event_id` already resolved via `find_appointments`. See `docs/cancel_appointment_spec.md`.
 
 **Tools to implement:**
-- `cancel_appointment` — cancel existing event, given an `event_id` already resolved via `find_appointments`. See `docs/cancel_appointment_spec.md`.
 - `reschedule_appointment` — cancel + create, or move existing event
 
 ---
@@ -119,6 +119,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 **book_appointment write behavior (confirmed via integration test, July 2026):** `create_event` omits the `colorId` field entirely from the insert body when `color_id=None` (Juan), rather than sending a literal `colorId: null` — verified against the raw Calendar API response. R-7 re-verification (`check_slot_available` immediately before insert) was tested against a genuine race condition (a real conflicting event created out-of-band) and correctly returns `{"success": False, "reason": "slot_taken"}` without writing a duplicate event.
 
 **`CALENDAR_ID` bug (found and fixed, July 2026):** `"primary"` resolves to the OAuth account's own default calendar (`ruizmo.miguel@gmail.com`), not the secondary `quarter-barber-dev` calendar used for development. This was discovered via manual visual inspection after check_availability and book_appointment had already been integration-tested — all prior testing had silently been reading/writing against the personal calendar instead of dev. No real data was affected (personal calendar was swept and confirmed clean of test events after the fix), but this is a reminder that any config value resolved implicitly by the API (rather than an explicit, verified ID) must be confirmed by direct inspection, not assumed from documentation or naming. `CALENDAR_ID` is now the real calendar ID (retrieved via `calendarList().list()`), not `"primary"`.
+
+**Cancel behavior — 404 vs 410 confirmed empirically (July 2026):** Google Calendar returns 410 Gone when deleting an event that already existed and was previously deleted, and 404 Not Found when the event_id never existed at all. `cancel_appointment` deliberately treats both identically as `{"success": False, "reason": "not_found"}` — the distinction matters at the API level but not to the agent/client.
 
 ---
 

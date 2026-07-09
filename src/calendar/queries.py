@@ -71,3 +71,11 @@ def create_event(
     if color_id is not None:
         body["colorId"] = color_id
     return service.events().insert(calendarId=calendar_id, body=body).execute()
+
+
+def delete_event(calendar_id: str, event_id: str) -> None:
+    """Delete an event by ID. Raises HttpError for anything other than
+    404/410 — callers are expected to handle those explicitly rather than
+    this function swallowing them."""
+    service = get_calendar_service()
+    service.events().delete(calendarId=calendar_id, eventId=event_id).execute()
