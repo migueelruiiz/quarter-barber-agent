@@ -9,6 +9,16 @@ memory. Supports both agent-created events (structured "Name - Phone"
 summary, see book_appointment.py) and free-text phone-booked events
 manually annotated by a barber, which is why matching can't rely on a
 single structured field.
+
+client_phone is normalized the same way as in book_appointment (stripping
+a +34/34 prefix, see src/tools/_phone.py) before the digit-substring
+comparison -- but NOT the event summary side of that comparison. The
+summary's digit string may include unrelated digits from free-text content
+(e.g. "Juanito corte 17h"), so the "exactly 11 digits starting with 34"
+condition isn't reliably meaningful there. This is safe either way: once
+the search side is normalized to a bare 9-digit number, it remains a valid
+substring of a longer digit string regardless of whatever prefix or
+surrounding text that longer string contains.
 """
 
 import unicodedata
@@ -17,6 +27,7 @@ from datetime import datetime, time, timedelta
 
 from config import BARBERS, CALENDAR_ID, TIMEZONE
 from src.calendar.queries import list_events
+from src.tools._phone import normalize_spanish_phone
 
 SEARCH_WINDOW_DAYS = 90
 
@@ -71,7 +82,7 @@ def _now() -> datetime:
 def _phone_matches(client_phone: str, summary: str) -> bool:
     if not client_phone:
         return False
-    digits = _digits_only(client_phone)
+    digits = _digits_only(normalize_spanish_phone(client_phone))
     return bool(digits) and digits in _digits_only(summary)
 
 

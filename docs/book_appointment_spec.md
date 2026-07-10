@@ -75,8 +75,12 @@ Notes on parameters:
    - If `True`: proceed to step 3.
 
 3. **Create the event.**
-   - Title (`summary`): exactly `f"{client_name} - {client_phone}"`. No
-     description, no additional fields.
+   - Title (`summary`): exactly `f"{client_name} - {client_phone}"`, where
+     `client_phone` has been normalized to the bare 9-digit Spanish
+     national number first (stripping a `+34`/`34` prefix if present —
+     see `src/tools/_phone.py`; any other length/prefix is left as
+     digits-only, unmodified further). No description, no additional
+     fields.
    - `color_id` passed through as given — the caller (agent) is
      responsible for having obtained a valid `color_id` from a prior
      `check_availability` call.

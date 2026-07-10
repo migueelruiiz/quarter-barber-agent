@@ -88,7 +88,45 @@ def test_event_summary_is_name_dash_phone(monkeypatch):
     )
 
     _, _, summary, _, _ = create_calls[0]
-    assert summary == "Juan Perez - +34600000000"
+    assert summary == "Juan Perez - 600000000"
+
+
+@pytest.mark.parametrize(
+    "client_phone",
+    ["+34600111222", "34600111222", "600 111 222", "600111222"],
+)
+def test_spanish_phone_variants_normalize_to_same_summary(monkeypatch, client_phone):
+    _patch_slot_available(monkeypatch, True)
+    create_calls = _patch_create_event(monkeypatch)
+
+    ba.book_appointment(
+        service="corte",
+        start=START,
+        color_id="9",
+        client_name="Juan Perez",
+        client_phone=client_phone,
+    )
+
+    _, _, summary, _, _ = create_calls[0]
+    assert summary == "Juan Perez - 600111222"
+
+
+def test_non_spanish_shaped_phone_left_unmodified(monkeypatch):
+    _patch_slot_available(monkeypatch, True)
+    create_calls = _patch_create_event(monkeypatch)
+
+    # US number: 11 digits but doesn't start with "34" -> not treated as
+    # Spanish, no prefix is stripped.
+    ba.book_appointment(
+        service="corte",
+        start=START,
+        color_id="9",
+        client_name="Juan Perez",
+        client_phone="+1 415 555 0100",
+    )
+
+    _, _, summary, _, _ = create_calls[0]
+    assert summary == "Juan Perez - 14155550100"
 
 
 def test_end_time_derived_from_multi_duration_service(monkeypatch):

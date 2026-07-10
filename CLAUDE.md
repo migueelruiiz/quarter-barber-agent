@@ -49,7 +49,7 @@ quarter-barber-agent/
 │   ├── agent/                     ← ReAct loop, agent class
 │   ├── calendar/                  ← Google Calendar API integration
 │   ├── memory/                    ← session memory (per phone number)
-│   ├── tools/                     ← one file per tool
+│   ├── tools/                     ← one file per tool, plus _phone.py (shared helper)
 │   └── whatsapp/                  ← Twilio integration
 ├── tests/
 ├── .env
@@ -121,6 +121,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 **`CALENDAR_ID` bug (found and fixed, July 2026):** `"primary"` resolves to the OAuth account's own default calendar (`ruizmo.miguel@gmail.com`), not the secondary `quarter-barber-dev` calendar used for development. This was discovered via manual visual inspection after check_availability and book_appointment had already been integration-tested — all prior testing had silently been reading/writing against the personal calendar instead of dev. No real data was affected (personal calendar was swept and confirmed clean of test events after the fix), but this is a reminder that any config value resolved implicitly by the API (rather than an explicit, verified ID) must be confirmed by direct inspection, not assumed from documentation or naming. `CALENDAR_ID` is now the real calendar ID (retrieved via `calendarList().list()`), not `"primary"`.
 
 **Cancel behavior — 404 vs 410 confirmed empirically (July 2026):** Google Calendar returns 410 Gone when deleting an event that already existed and was previously deleted, and 404 Not Found when the event_id never existed at all. `cancel_appointment` deliberately treats both identically as `{"success": False, "reason": "not_found"}` — the distinction matters at the API level but not to the agent/client.
+
+**Phone number normalization (July 2026):** `client_phone` is normalized to the bare 9-digit Spanish national number (no `+34` prefix) before being stored by `book_appointment` and before being searched by `find_appointments` — but not applied to the event `summary` side of the comparison, since free-text summaries can contain unrelated digits (e.g. "17h"). Shared logic lives in `src/tools/_phone.py`.
 
 ---
 

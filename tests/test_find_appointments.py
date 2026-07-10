@@ -54,6 +54,43 @@ def test_phone_match_against_agent_created_event(monkeypatch):
     assert results[0]["barber"] == "dylan"  # colorId "9"
 
 
+def test_search_with_country_code_matches_summary_stored_bare(monkeypatch):
+    # New book_appointment behavior stores the bare 9-digit national number
+    # (no +34) in the summary. A search with the full +34-prefixed number
+    # (e.g. the WhatsApp session's E.164 number) must still find it.
+    events = [_event(MONDAY, "10:00", "10:30", "9", "Juan Perez - 600111222", "evt-cc")]
+    _patch_events(monkeypatch, events)
+
+    results = fa.find_appointments(client_phone="+34600111222", client_name="", date=MONDAY)
+
+    assert len(results) == 1
+    assert results[0]["event_id"] == "evt-cc"
+
+
+def test_search_with_bare_number_still_matches_summary_stored_bare(monkeypatch):
+    # Regression: searching without the country code must keep working.
+    events = [_event(MONDAY, "10:00", "10:30", "9", "Juan Perez - 600111222", "evt-bare")]
+    _patch_events(monkeypatch, events)
+
+    results = fa.find_appointments(client_phone="600111222", client_name="", date=MONDAY)
+
+    assert len(results) == 1
+    assert results[0]["event_id"] == "evt-bare"
+
+
+def test_normalization_not_applied_to_free_text_summary_digits(monkeypatch):
+    # The summary's own digits (e.g. a hand-written time like "17h") must
+    # never be run through the Spanish-prefix normalization -- only the
+    # client_phone search side is normalized. Searching with an unrelated
+    # phone number must not accidentally match this summary's digits.
+    events = [_event(MONDAY, "17:00", "17:30", "6", "Juanito corte 17h", "evt-freetext")]
+    _patch_events(monkeypatch, events)
+
+    results = fa.find_appointments(client_phone="+34600111222", client_name="", date=MONDAY)
+
+    assert results == []
+
+
 # ---------------------------------------------------------------------------
 # Name match against free-text, barber-annotated summary
 # ---------------------------------------------------------------------------

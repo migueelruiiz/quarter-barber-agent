@@ -62,9 +62,19 @@ never raise for "not found", only for missing input (step 7).
 
 ## Matching rules
 
-**Phone match**: strip all non-digit characters from both `client_phone`
-and the event's `summary`. Match if the digit-only client phone is a
-non-empty substring of the digit-only summary.
+**Phone match**: normalize `client_phone` with the same Spanish national-
+number normalization used by `book_appointment` (strip a `+34`/`34`
+prefix if present — see `src/tools/_phone.py`), then strip all non-digit
+characters from both the normalized `client_phone` and the event's
+`summary`. Match if the digit-only client phone is a non-empty substring
+of the digit-only summary. The normalization is deliberately NOT applied
+to the summary side: the summary's digit string may contain unrelated
+digits from free-text content (e.g. a time like "17h" in a barber's
+manual annotation), so the "11 digits starting with 34" condition isn't
+reliably meaningful there — applying it could strip digits out of
+context. This is safe: a normalized 9-digit search string remains a valid
+substring of a longer digit string regardless of what prefix or
+surrounding text that longer string contains.
 
 **Name match**: normalize both `client_name` and the event's `summary` —
 lowercase, strip accents (Unicode NFKD decomposition), remove punctuation.

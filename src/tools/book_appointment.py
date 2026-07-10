@@ -11,12 +11,17 @@ None explicitly for Juan (never hardcode a literal color for him).
 R-7 re-verification: check_slot_available is called again immediately
 before writing, to close the race window between check_availability and
 this call (near-simultaneous booking by two customers).
+
+client_phone is normalized to the bare Spanish national number (stripping
+a +34/34 prefix) before being written into the summary -- see
+src/tools/_phone.py.
 """
 
 from datetime import datetime, timedelta
 
 from config import CALENDAR_ID, SERVICES
 from src.calendar.queries import check_slot_available, create_event
+from src.tools._phone import normalize_spanish_phone
 
 
 def book_appointment(
@@ -35,7 +40,7 @@ def book_appointment(
     if not check_slot_available(CALENDAR_ID, color_id, start, end):
         return {"success": False, "reason": "slot_taken"}
 
-    summary = f"{client_name} - {client_phone}"
+    summary = f"{client_name} - {normalize_spanish_phone(client_phone)}"
     event = create_event(CALENDAR_ID, color_id, summary, start, end)
 
     return {
