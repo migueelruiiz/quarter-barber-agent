@@ -33,9 +33,10 @@ Google Calendar API / Session memory
 - `book_appointment` — create event in Google Calendar. Integration-tested against `quarter-barber-dev`.
 - `find_appointments` — locate a client's existing future appointment(s) by phone (digit-substring match) and/or name (NFKD-normalized token match), supporting both agent-created and free-text barber-annotated events. Read-only, no side effects. See `docs/find_appointments_spec.md`. Integration-tested against `quarter-barber-dev`.
 - `cancel_appointment` — cancel existing event, given an `event_id` already resolved via `find_appointments`. See `docs/cancel_appointment_spec.md`.
+- `reschedule_appointment` — patch an existing event's start/end/colorId in place (not cancel+create), preserving the original event's `summary` and actual duration (caller-supplied via `duration_minutes`, not re-derived from a service name — see `docs/reschedule_appointment_spec.md`). R-7 re-verified with `exclude_event_id` to avoid self-conflict against the event's own pre-patch state. Integration-tested against `quarter-barber-dev`, including two bugs found and fixed (see "Key decisions and constraints" below).
 
 **Tools to implement:**
-- `reschedule_appointment` — cancel + create, or move existing event
+- None — all v1 tools complete.
 
 ---
 
@@ -123,6 +124,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 **Cancel behavior — 404 vs 410 confirmed empirically (July 2026):** Google Calendar returns 410 Gone when deleting an event that already existed and was previously deleted, and 404 Not Found when the event_id never existed at all. `cancel_appointment` deliberately treats both identically as `{"success": False, "reason": "not_found"}` — the distinction matters at the API level but not to the agent/client.
 
 **Phone number normalization (July 2026):** `client_phone` is normalized to the bare 9-digit Spanish national number (no `+34` prefix) before being stored by `book_appointment` and before being searched by `find_appointments` — but not applied to the event `summary` side of the comparison, since free-text summaries can contain unrelated digits (e.g. "17h"). Shared logic lives in `src/tools/_phone.py`.
+
+**`reschedule_appointment` — two bugs found via integration testing (July 2026):** (1) `patch_event` originally omitted `colorId` when rescheduling to Juan, copying `create_event`'s insert-time convention — but `patch()` only updates keys present in the body, so the old barber's `colorId` was silently left in place. Fixed by always sending `colorId` explicitly, `null` for Juan. (2) Rescheduling an already-cancelled event returned `success: True` instead of `not_found` — unlike a second `delete()`, `patch()` doesn't raise on a cancelled resource. Fixed by checking `status` in the `patch_event` response (no extra API call); the cancelled resource's `start`/`end` may still be mutated before that check runs, which is accepted as harmless since cancelled events stay invisible to `list_events`/`check_availability`. Full findings: `docs/reschedule_appointment_findings.md`.
 
 ---
 

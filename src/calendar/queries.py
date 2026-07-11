@@ -40,11 +40,22 @@ def list_events(calendar_id: str, start: datetime, end: datetime) -> list[dict]:
 
 
 def check_slot_available(
-    calendar_id: str, color_id: str, start: datetime, end: datetime
+    calendar_id: str,
+    color_id: str,
+    start: datetime,
+    end: datetime,
+    exclude_event_id: str | None = None,
 ) -> bool:
-    """Return True if no event assigned to color_id overlaps [start, end)."""
+    """Return True if no event assigned to color_id overlaps [start, end).
+
+    exclude_event_id, when provided, is skipped when checking for overlap --
+    used by reschedule_appointment so the appointment's own pre-patch event
+    isn't misread as a conflict against its own new slot.
+    """
     events = list_events(calendar_id, start, end)
-    return not any(e["colorId"] == color_id for e in events)
+    return not any(
+        e["colorId"] == color_id and e["id"] != exclude_event_id for e in events
+    )
 
 
 def create_event(
@@ -71,6 +82,40 @@ def create_event(
     if color_id is not None:
         body["colorId"] = color_id
     return service.events().insert(calendarId=calendar_id, body=body).execute()
+
+
+def patch_event(
+    calendar_id: str,
+    event_id: str,
+    color_id: str | None,
+    start: datetime,
+    end: datetime,
+) -> dict:
+    """Update start, end, and colorId on an existing event. summary is never
+    touched. Unlike create_event, colorId is always included in the body,
+    explicitly null when color_id is None -- patch() only updates keys
+    present in the body, so omitting colorId (create_event's convention,
+    correct for insert) would leave the event's OLD colorId untouched
+    instead of clearing it when rescheduling to Juan. Confirmed empirically
+    against quarter-barber-dev; see docs/reschedule_appointment_findings.md.
+    Raises HttpError for anything other than 404/410 -- callers are
+    expected to handle those explicitly rather than this function
+    swallowing them.
+
+    Do not rely on the timeZone field sent here for anything read back
+    afterward -- same API quirk as create_event.
+    """
+    service = get_calendar_service()
+    body = {
+        "start": {"dateTime": start.isoformat()},
+        "end": {"dateTime": end.isoformat()},
+        "colorId": color_id,
+    }
+    return (
+        service.events()
+        .patch(calendarId=calendar_id, eventId=event_id, body=body)
+        .execute()
+    )
 
 
 def delete_event(calendar_id: str, event_id: str) -> None:
