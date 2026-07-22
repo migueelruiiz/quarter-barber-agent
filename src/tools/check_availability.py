@@ -84,7 +84,7 @@ def _slots_for_day(
         return []
 
     if barber is not None:
-        slots = _slots_for_single_barber(day, day_open, day_close, duration, barber)
+        slots = _slots_for_single_barber(day, day_open, day_close, duration, barber, service)
     else:
         slots = _slots_best_barber_per_gap(day, day_open, day_close, duration, service)
 
@@ -97,8 +97,11 @@ def _slots_for_single_barber(
     day_close: datetime,
     duration: timedelta,
     barber: str,
+    service: str,
 ) -> list[dict]:
     barber_data = BARBERS[barber]
+    if service not in barber_data["eligible_services"]:
+        return []
     if day.weekday() == barber_data["day_off"]:
         return []
 

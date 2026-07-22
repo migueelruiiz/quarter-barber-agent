@@ -176,6 +176,49 @@ WORKING_HOURS = {
 
 
 # ---------------------------------------------------------------------------
+# Shop identity
+# ---------------------------------------------------------------------------
+SHOP_NAME = "Quarter Barber, Gentleman's"
+SHOP_ADDRESS = "Calle Abtao Nº 4, Madrid"
+
+
+# ---------------------------------------------------------------------------
+# Spanish calendar names — shared source of truth for both the 14-day date
+# lookup table injected into the system prompt (src/agent/loop.py) and the
+# deterministic confirmation templates (src/agent/confirmations.py). Must
+# not be duplicated in either of those modules — see CLAUDE.md, "Never
+# calculate weekday offsets yourself" / the weekday-mismatch findings in
+# docs/loop_confirmation_bugs_findings.md.
+# ---------------------------------------------------------------------------
+# date.weekday() convention: Monday=0 ... Sunday=6 — same as BARBERS'
+# day_off and WORKING_HOURS keys above.
+SPANISH_WEEKDAYS = {
+    0: "lunes",
+    1: "martes",
+    2: "miércoles",
+    3: "jueves",
+    4: "viernes",
+    5: "sábado",
+    6: "domingo",
+}
+
+SPANISH_MONTHS = {
+    1: "enero",
+    2: "febrero",
+    3: "marzo",
+    4: "abril",
+    5: "mayo",
+    6: "junio",
+    7: "julio",
+    8: "agosto",
+    9: "septiembre",
+    10: "octubre",
+    11: "noviembre",
+    12: "diciembre",
+}
+
+
+# ---------------------------------------------------------------------------
 # Calendar API configuration
 # ---------------------------------------------------------------------------
 # CALENDAR_ID: the OAuth-authenticated account owns multiple calendars.

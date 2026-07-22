@@ -36,7 +36,10 @@ Google Calendar API / Session memory
 - `reschedule_appointment` — patch an existing event's start/end/colorId in place (not cancel+create), preserving the original event's `summary` and actual duration (caller-supplied via `duration_minutes`, not re-derived from a service name — see `docs/reschedule_appointment_spec.md`). R-7 re-verified with `exclude_event_id` to avoid self-conflict against the event's own pre-patch state. Integration-tested against `quarter-barber-dev`, including two bugs found and fixed (see "Key decisions and constraints" below).
 
 **Tools to implement:**
-- None — all v1 tools complete.
+- **Known gap to resolve before WhatsApp integration:** run_agent_turn assumes
+serialized access per session_id — concurrent messages from the same customer
+arriving close together could race on save_session (lost update). See
+docs/react_loop_spec.md, "Explicitly out of scope".
 
 ---
 
@@ -126,6 +129,8 @@ Operational constraint: barbers must only use one of the 11 classic colors when 
 **Phone number normalization (July 2026):** `client_phone` is normalized to the bare 9-digit Spanish national number (no `+34` prefix) before being stored by `book_appointment` and before being searched by `find_appointments` — but not applied to the event `summary` side of the comparison, since free-text summaries can contain unrelated digits (e.g. "17h"). Shared logic lives in `src/tools/_phone.py`.
 
 **`reschedule_appointment` — two bugs found via integration testing (July 2026):** (1) `patch_event` originally omitted `colorId` when rescheduling to Juan, copying `create_event`'s insert-time convention — but `patch()` only updates keys present in the body, so the old barber's `colorId` was silently left in place. Fixed by always sending `colorId` explicitly, `null` for Juan. (2) Rescheduling an already-cancelled event returned `success: True` instead of `not_found` — unlike a second `delete()`, `patch()` doesn't raise on a cancelled resource. Fixed by checking `status` in the `patch_event` response (no extra API call); the cancelled resource's `start`/`end` may still be mutated before that check runs, which is accepted as harmless since cancelled events stay invisible to `list_events`/`check_availability`. Full findings: `docs/reschedule_appointment_findings.md`.
+
+**Booking/reschedule confirmations are server-side rendered, not model-generated (July 2026):** the customer-facing reply immediately after a successful `book_appointment`/`reschedule_appointment` call is built by `src/agent/confirmations.py`, not drafted by the model — same principle as `config.py` being the single source of truth for structured data, applied to this one turn. This eliminates, by construction rather than detection, three bugs found via `testingscripts/dev_chat.py` and documented in `docs/loop_confirmation_bugs_findings.md`: garbled/self-correcting model text leaking into `content` (the model occasionally drafts a flawed first pass directly in `content`, un-separated from its self-correction — confirmed via a live capture that `message.reasoning` is unaffected and separately populated, so this isn't a reasoning-field leak), a wrong weekday name (the model would sometimes compute it freehand instead of using the same lookup table backing the system prompt's 14-day date table), and an appointment's end time leaking into a confirmation. `render_booking_confirmation`/`render_reschedule_confirmation` deliberately omit price (`service` is a coarse `SERVICES` duration category with multiple, differently-priced `PRICE_MENU` variants and no structured signal for which one the customer meant — rendering one would mean guessing, same as the rule this project already applies to prices generally); `render_reschedule_confirmation` also omits `client_name`/`service` entirely, since `RescheduleAppointmentArgs` never carries either. Every other agent turn (slot offers, pricing questions, cancellation confirmations, `slot_taken`/`not_found` failures) is unaffected and still model-drafted.
 
 ---
 

@@ -167,6 +167,72 @@ def test_specified_barber_fully_booked_returns_empty_no_substitution(monkeypatch
 
 
 # ---------------------------------------------------------------------------
+# R-13: explicit barber must still be filtered by service eligibility
+# ---------------------------------------------------------------------------
+
+def test_ineligible_explicit_barber_returns_empty_even_when_free(monkeypatch):
+    # rafa is not eligible for decoloracion (config.BARBERS["rafa"]); his
+    # calendar is completely free, so an empty result here can only come
+    # from the eligibility check, not from any free/busy computation --
+    # guards against a fix that only "works" because the day happens to be
+    # rafa's day off.
+    _patch_events(monkeypatch, [])
+    assert "decoloracion" not in config.BARBERS["rafa"]["eligible_services"]
+    assert MONDAY.weekday() != config.BARBERS["rafa"]["day_off"]
+
+    slots = ca.check_availability(
+        service="decoloracion", date=MONDAY, barber="rafa", max_results=100
+    )
+
+    assert slots == []
+
+
+def test_ineligible_explicit_barber_yuri_returns_empty(monkeypatch):
+    _patch_events(monkeypatch, [])
+    assert "decoloracion" not in config.BARBERS["yuri"]["eligible_services"]
+    assert MONDAY.weekday() != config.BARBERS["yuri"]["day_off"]
+
+    slots = ca.check_availability(
+        service="decoloracion", date=MONDAY, barber="yuri", max_results=100
+    )
+
+    assert slots == []
+
+
+def test_eligible_explicit_barbers_still_return_slots_for_decoloracion(monkeypatch):
+    # Guard against a fix that's too broad and blocks everyone -- dylan and
+    # juan ARE configured as eligible (config.BARBERS) and must still get
+    # real slots.
+    _patch_events(monkeypatch, [])
+
+    dylan_slots = ca.check_availability(
+        service="decoloracion", date=MONDAY, barber="dylan", max_results=1
+    )
+    juan_slots = ca.check_availability(
+        service="decoloracion", date=MONDAY, barber="juan", max_results=1
+    )
+
+    assert dylan_slots != []
+    assert juan_slots != []
+
+
+def test_barber_none_branch_already_skips_ineligible_barbers(monkeypatch):
+    # _slots_best_barber_per_gap already filters by eligible_services; this
+    # confirms that behavior directly rather than assuming it from reading
+    # the code, since no existing test asserted it explicitly.
+    _patch_events(monkeypatch, [])
+
+    slots = ca.check_availability(
+        service="decoloracion", date=MONDAY, barber=None, max_results=100
+    )
+
+    assigned = {s["barber"] for s in slots}
+    assert assigned <= {"dylan", "juan"}
+    assert "rafa" not in assigned
+    assert "yuri" not in assigned
+
+
+# ---------------------------------------------------------------------------
 # barber=None mixes barbers per slot, following seniority fallback
 # ---------------------------------------------------------------------------
 
